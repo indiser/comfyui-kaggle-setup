@@ -10,10 +10,13 @@ Run [ComfyUI](https://github.com/Comfy-Org/ComfyUI) (a node-based AI image/video
 |---|---|
 | `comfy-kaggle-text-to-image.ipynb` | Text → Image using **Z-Image-Turbo** + Lyara LoRA |
 | `comfy-kaggle-image-to-image.ipynb` | Image → Edited Image using **Wan 2.2 ChronoEdit 14B** |
+| `comfy-kaggle-video-generation.ipynb` | Text → Video and Image → Video using **Wan 2.2 5B** |
 | `magnetic_lion_anime_lora_api.json` | Example workflow for the text-to-image notebook |
 | `chronoedit_14b_distill_api.json` | Example workflow for the image-to-image notebook |
+| `wan22_5b_text2video_api.json` | Text → Video workflow for the video generation notebook |
+| `wan22_5b_img2video_api.json` | Image → Video workflow for the video generation notebook |
 | `prompts.txt` | Sample prompts for the Lyara anime LoRA |
-| `output/` | Sample generated images |
+| `output/` | Sample generated images and videos |
 
 ---
 
@@ -68,6 +71,36 @@ Once ComfyUI is open in your browser:
 ---
 
 ## Notebooks & models explained
+
+### Video Generation (`comfy-kaggle-video-generation.ipynb`)
+
+Generates short MP4 videos from either a text prompt alone or a starting image + text prompt. Uses the **Wan 2.2 5B** text-image-to-video model. This is the lightest of the three notebooks — the 5B model fits comfortably in the T4's 16 GB VRAM at fp16.
+
+**Models downloaded:**
+| Model | File | Role |
+|---|---|---|
+| Wan 2.2 5B diffusion model | `wan2.2_ti2v_5B_fp16.safetensors` (~9.3 GB) | Main video generator |
+| Wan 2.2 VAE | `wan2.2_vae.safetensors` (~1.3 GB) | Encodes/decodes video frames |
+| UMT5-XXL text encoder | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (~6.2 GB) | Understands your prompt |
+
+**Workflows:**
+
+`wan22_5b_text2video_api.json` — Text → Video
+- Generates a 33-frame video at 832×480 from a text prompt only
+- Sampler: `uni_pc`, 20 steps, CFG: `5.0`
+- Edit the **Positive Prompt** node with your scene description
+- Edit the **Negative Prompt** node to exclude unwanted elements
+
+`wan22_5b_img2video_api.json` — Image → Video
+- Same as above but also loads a starting image (`start.png`) from ComfyUI's input folder to anchor the first frame
+- Upload your image to ComfyUI's input folder and name it `start.png`, or change the filename in the **Load Image** node
+- The video animates from that image according to your prompt
+
+**Both workflows output** a 33-frame MP4 at 24 fps (~1.4 seconds). Outputs are saved to `output/video/`.
+
+> Note: CFG `5.0` and 20 steps is used here (unlike the distilled image models which use CFG `1` and 8 steps). The Wan 2.2 5B video model is not distilled, so it benefits from higher CFG and more steps.
+
+---
 
 ### Text-to-Image (`comfy-kaggle-text-to-image.ipynb`)
 
