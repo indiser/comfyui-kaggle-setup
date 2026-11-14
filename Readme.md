@@ -9,9 +9,11 @@ Run [ComfyUI](https://github.com/Comfy-Org/ComfyUI) (a node-based AI image/video
 | File | Purpose |
 |---|---|
 | `comfy-kaggle-text-to-image.ipynb` | Text → Image using **Z-Image-Turbo** + Lyara LoRA |
+| `comfy-kaggle-text-to-image-uncensored.ipynb` | Same as above but with an **uncensored text encoder** (Heretic) |
 | `comfy-kaggle-image-to-image.ipynb` | Image → Edited Image using **Wan 2.2 ChronoEdit 14B** |
 | `comfy-kaggle-video-generation.ipynb` | Text → Video and Image → Video using **Wan 2.2 5B** |
 | `magnetic_lion_anime_lora_api.json` | Example workflow for the text-to-image notebook |
+| `uncensored_workflow.json` | Example workflow for the uncensored text-to-image notebook |
 | `chronoedit_14b_distill_api.json` | Example workflow for the image-to-image notebook |
 | `wan22_5b_text2video_api.json` | Text → Video workflow for the video generation notebook |
 | `wan22_5b_img2video_api.json` | Image → Video workflow for the video generation notebook |
@@ -121,6 +123,31 @@ Generates images from a text prompt.
 - To use your own prompt: open the workflow, edit the **Positive Prompt** node
 
 **Sample prompts** are in `prompts.txt` — all use the `lyara` trigger word to activate the LoRA.
+
+---
+
+### Uncensored Text-to-Image (`comfy-kaggle-text-to-image-uncensored.ipynb`)
+
+Identical setup to the standard text-to-image notebook, but swaps the text encoder for an uncensored fine-tune of Qwen 3 4B called **Heretic**. The diffusion model, VAE, and Lyara LoRA are the same. Use this if the standard encoder refuses or waters down your prompts.
+
+**Models downloaded:**
+| Model | File | Role |
+|---|---|---|
+| Z-Image-Turbo diffusion model | `z_image_turbo_bf16.safetensors` (~11 GB) | Main image generator |
+| Qwen 3 4B Heretic text encoder (fp8) | `qwen3-4b-heretic_fp8_e4m3fn.safetensors` (~4.1 GB) | Uncensored text encoder |
+| AE VAE | `ae.safetensors` (~320 MB) | Decodes latent → pixel image |
+| CLIP Vision H | `clip_vision_h.safetensors` (~1.2 GB) | Visual encoder |
+| Lyara anime LoRA | `lyara-lora.safetensors` (~163 MB) | Anime character style fine-tune |
+
+> The fp8 Heretic encoder (~4.1 GB) is smaller than the standard `qwen_3_4b.safetensors` (~7.4 GB), so this notebook actually uses less VRAM for the text encoder despite being uncensored.
+
+**Workflow (`uncensored_workflow.json`):**
+- Loads Z-Image-Turbo + Heretic encoder + AE VAE
+- No LoRA loaded by default — add a `LoraLoaderModelOnly` node if you want the Lyara style
+- Generates a 1024×1024 image in **8 steps**
+- Sampler: `euler`, CFG: `1`
+- Edit the **Positive Prompt** node (node 4) with your prompt
+- Edit the **Negative Prompt** node (node 5) with things to exclude
 
 ---
 
